@@ -1,4 +1,3 @@
-import { SplattedVertex } from "./PlyParser";
 import point_shader from "./shaders/point_shader.wgsl?raw";
 
 export class Points {
@@ -8,14 +7,14 @@ export class Points {
     private _opacities: GPUBuffer;
     private _numVertices: number;
   
-    constructor(device: GPUDevice, vertices: SplattedVertex[], viewParamsBindGroupLayout: GPUBindGroupLayout) {
+    constructor(device: GPUDevice, vertices: any[], viewParamsBindGroupLayout: GPUBindGroupLayout) {
       const shaderModule = device.createShaderModule({
         code: point_shader
       });
   
-      const positions = new Float32Array(vertices.flatMap(vertex => [vertex.position[0], vertex.position[1], vertex.position[2]]));
-      const colors = new Float32Array(vertices.flatMap(vertex => [vertex.color[0], vertex.color[1], vertex.color[2]]));
-      const opacities = new Float32Array(vertices.map(vertex => vertex.opacity));
+      const positions = new Float32Array(vertices.flatMap(vertex => [vertex[0], vertex[1], vertex[2]]));
+      const colors = new Float32Array(vertices.flatMap(_ => [0,1,0]));
+      const opacities = new Float32Array(vertices.map(_ => 1));
   
       //CREATE VERTEX ATTRIBUTE BUFFERS
       const positionsBuffer = device.createBuffer({

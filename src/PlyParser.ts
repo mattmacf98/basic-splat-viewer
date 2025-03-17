@@ -1,13 +1,4 @@
-import * as glMatrix from 'gl-matrix';
-
-export interface SplattedVertex {
-    position: glMatrix.vec3;
-    rotation: glMatrix.vec4;
-    scale: glMatrix.vec3;
-    color: glMatrix.vec3;
-    opacity: number;
-}
-
+import { SplattedVertex } from './SplattedVertex';
 export class PlyParser {
     private header: string[] = [];
     private format: string = '';
@@ -91,13 +82,13 @@ export class PlyParser {
         const SH_C0 = 0.28209479177387814;
         const splattedVertices: SplattedVertex[] = [];
         for (const vertex of vertices) {
-            const splattedVertex:SplattedVertex = {
-                position: [vertex.x, vertex.y, vertex.z],
-                rotation: [vertex.rot_0, vertex.rot_1, vertex.rot_2, vertex.rot_3],
-                scale: [Math.exp(vertex.scale_0), Math.exp(vertex.scale_1), Math.exp(vertex.scale_2)],
-                color: [0.5 + SH_C0 * vertex.f_dc_0, 0.5 + SH_C0 * vertex.f_dc_1, 0.5 + SH_C0 * vertex.f_dc_2],
-                opacity: 1.0 / (1.0 + Math.exp(-vertex.opacity))
-            }
+            const splattedVertex:SplattedVertex = new SplattedVertex(
+                [vertex.x, vertex.y, vertex.z],
+                [vertex.rot_0, vertex.rot_1, vertex.rot_2, vertex.rot_3],
+                [Math.exp(vertex.scale_0), Math.exp(vertex.scale_1), Math.exp(vertex.scale_2)],
+                [0.5 + SH_C0 * vertex.f_dc_0, 0.5 + SH_C0 * vertex.f_dc_1, 0.5 + SH_C0 * vertex.f_dc_2],
+                1.0 / (1.0 + Math.exp(-vertex.opacity))
+            );
             splattedVertices.push(splattedVertex);
         }
         return splattedVertices;
