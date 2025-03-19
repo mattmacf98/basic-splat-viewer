@@ -3,8 +3,6 @@ import { Controller } from "ez_canvas_controller";
 import * as glMatrix from "gl-matrix";
 import { PlyParser } from "./PlyParser";
 import { Splats } from "./Splats";
-import { SplattedVertex } from "./SplattedVertex";
-import { Points } from "./Points";
 
 export class RenderEngine {
     public static async init(canvas: HTMLCanvasElement) {
@@ -70,21 +68,14 @@ export class RenderEngine {
       });
   
       // 3. LOAD PLY FILE
-
-      const pointsResponse = await fetch('/points.json');
-      const pointsData = await pointsResponse.json();
-      const points = new Points(device, pointsData, viewParamBindGroupLayout)
-
       const response = await fetch('/food.ply')
       const blob = await response.blob()
       const file = new File([blob], 'food.ply')
-      
+
       const parser = new PlyParser()
-      await parser.parsePlyFile(file)
-      const splat = new SplattedVertex([10, 10, 10], [0.601, 0.576, 0.554, 0.01], [2, 0.3, 0.5], [1, 1, 1], 1)
-      const splatTwo = new SplattedVertex([10, 10, 10], [0.601, 0.576, 0.554, 0.01], [2, 0.3, 0.5], [1, 1, 1], 1)
+      await parser.parsePlyFile(file);    
   
-      const splats = new Splats(device, [splat, splatTwo], viewParamBindGroupLayout)
+      const splats = new Splats(device, parser.getSplattifiedVertices(), viewParamBindGroupLayout)
       // 4. CREATE CAMERA AND CONTROLLER
       const camera = new ArcballCamera([0, 0, -1], [0, 0, 0], [0, 1, 0], 0.5, [
         canvas.width,
@@ -98,6 +89,7 @@ export class RenderEngine {
           0.1,
           1000
       );
+      console.log(projection)
       let projView = glMatrix.mat4.create();
   
       const controller = new Controller();
@@ -155,7 +147,6 @@ export class RenderEngine {
         const basisUpdateBuffer = splats.updateBasisBuffer(device, projection, camera.camera, canvas, commandEncoder);
         const renderPass = commandEncoder.beginRenderPass(renderPassDesc);
         splats.render(renderPass, viewParamBindGroup);
-        points.render(renderPass, viewParamBindGroup);
         renderPass.end();
   
         device.queue.submit([commandEncoder.finish()]);

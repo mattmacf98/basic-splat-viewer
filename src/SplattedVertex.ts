@@ -17,7 +17,9 @@ export class SplattedVertex {
         this._opacity = opacity;
 
         // GET COVARIANCE
-        const rot_mat3 = glMatrix.mat3.fromQuat(glMatrix.mat3.create(), [this._rotation[0], this._rotation[1], this._rotation[2], this._rotation[3]]);
+        const rot_quat = glMatrix.quat.fromValues(this._rotation[1], this._rotation[2], this._rotation[3], this._rotation[0]);
+        glMatrix.quat.normalize(rot_quat, rot_quat);
+        const rot_mat3 = glMatrix.mat3.fromQuat(glMatrix.mat3.create(), rot_quat);
         const scale_mat4 = glMatrix.mat4.fromScaling(glMatrix.mat4.create(), this._scale);
         const scale_mat3 = glMatrix.mat3.fromMat4(glMatrix.mat3.create(), scale_mat4);
 
@@ -26,7 +28,7 @@ export class SplattedVertex {
         const covariance = glMatrix.mat3.multiply(glMatrix.mat3.create(), T, T_transpose);
 
         this._covariance = covariance;
-        this._basis = glMatrix.vec4.fromValues(0, 0, 0, 0);
+        this._basis = glMatrix.vec4.fromValues(1, -1, 1, 1);
     }
 
     public updateBasis(projectionMatrix: glMatrix.mat4, modelViewMatrix: glMatrix.mat4, canvas: HTMLCanvasElement) {

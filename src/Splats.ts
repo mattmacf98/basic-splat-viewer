@@ -15,7 +15,7 @@ export class Splats {
             code: splat_shader
           });
       
-          const positions = new Float32Array(vertices.flatMap(vertex => [vertex.position[0], vertex.position[1], vertex.position[2]]));
+          const positions = new Float32Array(vertices.flatMap(vertex => [vertex.position[0], vertex.position[1], vertex.position[2], 0.0]));
           const basis = new Float32Array(vertices.flatMap(vertex => [vertex.basis[0], vertex.basis[1], vertex.basis[2], vertex.basis[3]]));
           const colorsArray = [];
           for (let i = 0; i < vertices.length; i++) {
@@ -44,7 +44,7 @@ export class Splats {
             ],
           });
           const positionsBuffer = device?.createBuffer({
-            size: 3 * Float32Array.BYTES_PER_ELEMENT * vertices.length,
+            size: 4 * Float32Array.BYTES_PER_ELEMENT * vertices.length,
             usage: GPUBufferUsage.STORAGE | GPUBufferUsage.VERTEX,
             mappedAtCreation: true,
           });
