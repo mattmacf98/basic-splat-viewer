@@ -7,6 +7,7 @@ export class SplattedVertex {
     private _color: glMatrix.vec3;
     private _opacity: number;
     private _covariance: glMatrix.mat3;
+    private _modifiedCovariance: glMatrix.mat3;
     private _basis: glMatrix.vec4;
 
     constructor(position: glMatrix.vec3, rotation: glMatrix.vec4, scale: glMatrix.vec3, color: glMatrix.vec3, opacity: number) {
@@ -27,31 +28,35 @@ export class SplattedVertex {
         const T_transpose = glMatrix.mat3.transpose(glMatrix.mat3.create(), T);
         const covariance = glMatrix.mat3.multiply(glMatrix.mat3.create(), T, T_transpose);
 
+        const diagonalCovOne = glMatrix.vec3.fromValues(covariance[0], covariance[3], covariance[6]);
+        const diagonalCovTwo = glMatrix.vec3.fromValues(covariance[4], covariance[7], covariance[8]);
         this._covariance = covariance;
+        this._modifiedCovariance = glMatrix.mat3.fromValues(diagonalCovOne[0], diagonalCovOne[1], diagonalCovOne[2], diagonalCovOne[1], diagonalCovTwo[0], diagonalCovTwo[1], diagonalCovOne[2], diagonalCovTwo[1], diagonalCovTwo[2]);
         this._basis = glMatrix.vec4.fromValues(1, -1, 1, 1);
     }
 
     public updateBasis(projectionMatrix: glMatrix.mat4, modelViewMatrix: glMatrix.mat4, canvas: HTMLCanvasElement) {
-        const devicePixelRatio = window.devicePixelRatio || 1;
         const renderDimension = { x: canvas.clientWidth, y: canvas.clientHeight };
         const focal = {
-            x: projectionMatrix[0] * devicePixelRatio * renderDimension.x * 0.5,
-            y: projectionMatrix[5] * devicePixelRatio * renderDimension.y * 0.5
+            x: projectionMatrix[0] * renderDimension.x * 0.5,
+            y: projectionMatrix[5] * renderDimension.y * 0.5
         }
+
+        // 0.8904313445091248 1.187241792678833
+        // const mvm: glMatrix.mat4 = glMatrix.mat4.fromValues(-1,0,0,0, 0,1,0,0, 0,0,-1,0, 0,0,-1,1)
 
         const viewCenter = glMatrix.vec4.transformMat4(glMatrix.vec4.create(), glMatrix.vec4.fromValues(this._position[0], this._position[1], this._position[2], 1.0), modelViewMatrix);
         const s = 1.0 / (viewCenter[2] * viewCenter[2]);
         const jacobian = glMatrix.mat3.fromValues(
-             -focal.x / viewCenter[2], 0, (focal.x * viewCenter[0]) * s,
-            0, -focal.y / viewCenter[2], (focal.y * viewCenter[1]) * s,
+            focal.x / viewCenter[2], 0, -(focal.x * viewCenter[0]) * s,
+            0, focal.y / viewCenter[2], -(focal.y * viewCenter[1]) * s,
             0, 0, 0
         );
 
         const W = glMatrix.mat3.transpose(glMatrix.mat3.create(), glMatrix.mat3.fromMat4(glMatrix.mat3.create(), modelViewMatrix));
         const T = glMatrix.mat3.multiply(glMatrix.mat3.create(), W, jacobian);
 
-
-        const newC = glMatrix.mat3.multiply(glMatrix.mat3.create(), glMatrix.mat3.transpose(glMatrix.mat3.create(), T), glMatrix.mat3.multiply(glMatrix.mat3.create(), this._covariance, T));
+        const newC = glMatrix.mat3.multiply(glMatrix.mat3.create(), glMatrix.mat3.transpose(glMatrix.mat3.create(), T), glMatrix.mat3.multiply(glMatrix.mat3.create(), this._modifiedCovariance, T));
         const cov2Dv = glMatrix.vec3.fromValues(newC[0], newC[1], newC[4]);
 
         const a = cov2Dv[0];

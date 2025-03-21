@@ -195,6 +195,42 @@ export class Splats {
             commandEncoder.copyBufferToBuffer(basisUpdateBuffer, 0, this._basisBuffer, 0, 4 * Float32Array.BYTES_PER_ELEMENT * this._splats.length);
             return basisUpdateBuffer;
         }
+
+        public updateSplatIndexBuffer(device: GPUDevice, projectionMatrix: glMatrix.mat4, modelViewMatrix: glMatrix.mat4, commandEncoder: GPUCommandEncoder) {
+          const distances: number[] = [];
+          for (let i = 0; i < this._splats.length; ++i) {
+            const pos = glMatrix.vec4.fromValues(this._splats[i].position[0], this._splats[i].position[1], this._splats[i].position[2], 1.0);
+            const mvPos = glMatrix.vec4.transformMat4(glMatrix.vec4.create(), pos, modelViewMatrix);
+            const projPos = glMatrix.vec4.transformMat4(glMatrix.vec4.create(), mvPos, projectionMatrix);
+            distances.push(projPos[2] / projPos[3]);
+          }
+          
+          // Create array of indices and sort them based on distances
+          const indices = Array.from({length: distances.length}, (_, i) => i);
+          indices.sort((a, b) => distances[a] - distances[b]); // Sort descending
+  
+          // Create GPU buffer with sorted indices
+          const idArray = new Uint32Array(indices);
+          
+          const indexUpdateBuffer = device.createBuffer({
+            size: indices.length * Uint32Array.BYTES_PER_ELEMENT,
+            usage: GPUBufferUsage.COPY_SRC,
+            mappedAtCreation: true
+          });
+  
+          new Uint32Array(indexUpdateBuffer.getMappedRange()).set(idArray);
+          indexUpdateBuffer.unmap();
+  
+          commandEncoder.copyBufferToBuffer(
+              indexUpdateBuffer,
+              0,
+              this._splatIdsBuffer,
+              0,
+              indices.length * Uint32Array.BYTES_PER_ELEMENT
+          );
+  
+          return indexUpdateBuffer;
+        }
       
         public render(renderPass: GPURenderPassEncoder, viewParamsBindGroup: GPUBindGroup) {
           renderPass.setPipeline(this._pipeline);
