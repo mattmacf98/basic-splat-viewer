@@ -3,7 +3,6 @@ import { Controller } from "ez_canvas_controller";
 import * as glMatrix from "gl-matrix";
 import { PlyParser } from "./PlyParser";
 import { Splats } from "./Splats";
-import { SplattedVertex } from "./SplattedVertex";
 
 export class RenderEngine {
     public static async init(canvas: HTMLCanvasElement) {

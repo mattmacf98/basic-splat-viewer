@@ -7,7 +7,6 @@ export class SplattedVertex {
     private _color: glMatrix.vec3;
     private _opacity: number;
     private _covariance: glMatrix.mat3;
-    private _modifiedCovariance: glMatrix.mat3;
     private _basis: glMatrix.vec4;
 
     constructor(position: glMatrix.vec3, rotation: glMatrix.vec4, scale: glMatrix.vec3, color: glMatrix.vec3, opacity: number) {
@@ -28,10 +27,7 @@ export class SplattedVertex {
         const T_transpose = glMatrix.mat3.transpose(glMatrix.mat3.create(), T);
         const covariance = glMatrix.mat3.multiply(glMatrix.mat3.create(), T, T_transpose);
 
-        const diagonalCovOne = glMatrix.vec3.fromValues(covariance[0], covariance[3], covariance[6]);
-        const diagonalCovTwo = glMatrix.vec3.fromValues(covariance[4], covariance[7], covariance[8]);
         this._covariance = covariance;
-        this._modifiedCovariance = glMatrix.mat3.fromValues(diagonalCovOne[0], diagonalCovOne[1], diagonalCovOne[2], diagonalCovOne[1], diagonalCovTwo[0], diagonalCovTwo[1], diagonalCovOne[2], diagonalCovTwo[1], diagonalCovTwo[2]);
         this._basis = glMatrix.vec4.fromValues(1, -1, 1, 1);
     }
 
@@ -56,7 +52,7 @@ export class SplattedVertex {
         const W = glMatrix.mat3.transpose(glMatrix.mat3.create(), glMatrix.mat3.fromMat4(glMatrix.mat3.create(), modelViewMatrix));
         const T = glMatrix.mat3.multiply(glMatrix.mat3.create(), W, jacobian);
 
-        const newC = glMatrix.mat3.multiply(glMatrix.mat3.create(), glMatrix.mat3.transpose(glMatrix.mat3.create(), T), glMatrix.mat3.multiply(glMatrix.mat3.create(), this._modifiedCovariance, T));
+        const newC = glMatrix.mat3.multiply(glMatrix.mat3.create(), glMatrix.mat3.transpose(glMatrix.mat3.create(), T), glMatrix.mat3.multiply(glMatrix.mat3.create(), this._covariance, T));
         const cov2Dv = glMatrix.vec3.fromValues(newC[0], newC[1], newC[4]);
 
         const a = cov2Dv[0];
